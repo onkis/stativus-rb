@@ -1,21 +1,20 @@
-def do_thing(*args, &job)
-  job.call(args)
-end
+require 'rubygems'
+require Dir.pwd()+'/stativus.rb'
+statechart = Stativus::Statechart.new
 
-do_thing(:blah) { |x| x.to_s }
-# do_thing :blah do |x|
-#   puts x.to_s
-# end
-
-{
-  "name" => "someState",
-  "enterState" => Proc.new { |args| puts args },
-  
-  "exitState" => Proc.new { |args| puts args }
-}
-
-class State
-  def initialize
-    
+class Book < Stativus::State
+  has_concurrent_substates true
+  def enter
+    puts "hello"
   end
 end
+statechart.add_state(Book)
+
+class Document < Stativus::State
+  parent_state Book
+end
+statechart.add_state(Document)
+
+
+
+
