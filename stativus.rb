@@ -123,9 +123,25 @@ module Stativus
     
       obj[state.name] = state
     
-      states = state
-    puts @all_states
+      sub_states = state.states
+      
+      sub_states.each do |sub_state|
+        sub_state.parent_state = state
+        sub_state.global_concurrent_state = tree
+        add_state(sub_state)
+      end
+      
+      puts @all_states
+    end #add_state
+  
+    # call this in your programs main
+    # state is the initial state of the application
+    # in the default tree
+    def start_statechart(state)
+      self.gotoState(init, DEFAULT_TREE)
     end
+  
+    
   
   end
 end
