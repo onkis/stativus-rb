@@ -3,20 +3,18 @@ module Stativus
     attr_accessor :global_concurrent_state, 
                   :local_concurrent_state, 
                   :statechart,
-                  :has_concurrent_subtates,
+                  :has_concurrent_substates,
                   :parent_state,
                   :substates,
                   :states,
                   :history
   
-    def initalize(statechart)
+    def initialize(statechart)
       @statechart = statechart
       @substates = []
-      @has_concurrent_subtates = false unless @has_conurrent_substates
+      @has_concurrent_substates = false unless @has_conurrent_substates
       @global_concurrent_state = DEFAULT_TREE unless @global_concurrent_state
-      puts  "dork"
       puts @global_concurrent_state
-      super()
     end
   
   
@@ -69,7 +67,7 @@ module Stativus
     end
   
     def name
-      return self.to_s
+      return self.class.to_s
     end
   
   end
@@ -87,8 +85,7 @@ module Stativus
                   :pending_events,
                   :active_subtrees
   
-    def initalize()
-      super()
+    def initialize()
       @all_states = {}
       @all_states[DEFAULT_TREE] = {}
       @states_with_concurrent_substates = {}
@@ -127,7 +124,7 @@ module Stativus
       obj[state.name] = state
     
       states = state
-    
+    puts @all_states
     end
   
   end
