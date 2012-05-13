@@ -18,16 +18,16 @@ module Stativus
     end
   
   
-    def gotoState(name)
+    def goto_state(name)
       sc = @statechart
       if(sc) 
-        sc.gotoState(name, @global_concurrent_state, @local_concurrent_state)
+        sc.goto_state(name, @global_concurrent_state, @local_concurrent_state)
       else 
         raise "State has no statechart. Therefore no gotoState"
       end
     end
   
-    def gotoHistoryState(name)
+    def goto_history_state(name)
       sc = @statechart
       if(sc) 
         sc.gotoHistroyState(name, @global_concurrent_state, @local_concurrent_state)
@@ -36,15 +36,15 @@ module Stativus
       end
     end
   
-    def sendEvent(evt, *args)
+    def send_event(evt, *args)
       sc = @statechart
       if(sc) 
-        sc.sendEvent(evt, args) 
+        sc.send_event(evt, args) 
       else 
         raise "can't send event cause state doesn't have a statechart"
       end
     end
-    alias :sendAction :sendEvent
+    alias :send_action :send_event
     #
     #
     #data methods, override these in your implementations
@@ -79,7 +79,7 @@ module Stativus
                   :states_with_concurrent_substates,
                   :current_subtrees,
                   :current_state,
-                  :gotoStateLocked,
+                  :goto_state_locked,
                   :send_event_locked,
                   :pending_state_transitions,
                   :pending_events,
@@ -92,11 +92,12 @@ module Stativus
       @current_subsates = {}
       @current_state = {}
       @current_state[DEFAULT_TREE] = {}
-      @gotoStateLocked = false
+      @goto_state = false
       @send_event_locked = false
       @pending_state_transitions = []
       @pending_events = []
       @active_subtrees = {}
+      @goto_state_locked = false
     end
   
     def add_state(state_class)
@@ -141,7 +142,91 @@ module Stativus
       self.gotoState(init, DEFAULT_TREE)
     end
   
+    def goto_state(requested_state_name, tree, concurrent_tree)
+      all_states = @all_states[tree]
+      
+      #First, find the current tree off of the concurrentTree, then the main tree
+      curr_state = concurrent_tree ? @current_state[concurrent_tree] : @current_state[tree]
+      
+      requested_state = all_states[requested_state_name]
+      # if the current state is the same as the requested state do nothing
+      return if(check_all_current_states(requested_state, concurrent_tree || tree))
+      
+      
+      if(@goto_state_locked)
+        #There is a state transition currently happening. Add this requested
+        #state transition to the queue of pending state transitions. The req
+        #will be invoked after the current state transition is finished
+        @pending_state_transitions.push({
+          :requested_state => requested_state_name,
+          :tree => tree
+        })
+        return
+      end
+      # Lock for the current state transition, so that it all gets sorted out
+      # in the right order
+      @goto_state_locked = true
+      
+      # Get the parent states for the current state and the registered state.
+      # we will use them to find the commen parent state
+      
+      enter_states = this.
+      
+    end #end goto_state
     
-  
-  end
-end
+    #
+    # Private functions
+    #
+    private
+        
+    def check_all_current_states(requested_state, tree)
+      current_states = @current_state[tree] || []
+      
+      if(current_states == requested_state)
+        return true
+      elsif(current_states.class == String and requested_state == @all_states[tree][current_states])
+        return true
+      elsif(current_states.class == Array and currnet_states.contains(requested_state))
+        return true
+      else
+        return false
+      end
+    end
+    
+    # returns the state object for a passed name and tree
+    # was called _parentStateObject in js
+    def state_object(name, tree)
+      if(name && tree && @all_states[tree] && @all_states[tree][name])
+        return @all_states[tree][name]
+      end
+    end
+    
+    # 
+    # returns an array of all the parent states of the passed state
+    #
+    def parent_states(state)
+      ret = []
+      curr = state
+      
+      ret.push(curr)
+      
+      curr = state_object(curr.parent_state, curr.global_concurrent_state)
+      
+      while(curr)
+        ret.push(curr)
+        curr = state_object(curr.parent_state, curr.global_concurrent_state)
+      end
+      
+      return ret
+    end
+    
+    # creates an array of all a states parent states
+    # ending with a string of "root" to indcate the
+    # root state
+    def parent_states_with_root(state)
+      ret = parent_states(state)
+      ret.push('root')
+      return ret
+    end
+  end #end class
+end #end module
