@@ -5,6 +5,7 @@ module Stativus
                   :statechart,
                   :has_concurrent_substates,
                   :parent_state,
+                  :initial_substate,
                   :substates,
                   :states,
                   :history
@@ -65,6 +66,10 @@ module Stativus
     def self.states(*states)
       @staes = states
     end
+    
+    def self.initial_substate(state)
+      @initial_substate = name
+    end
   
     def name
       return self.class.to_s
@@ -73,7 +78,7 @@ module Stativus
   end
 
   DEFAULT_TREE = "default"
-
+  SUBSTATE_DELIM = "SUBSTATE:"
   class Statechart
     attr_accessor :all_states,
                   :states_with_concurrent_substates,
@@ -200,7 +205,16 @@ module Stativus
       # parent state. We do not exit the parent state because we transition
       # within it.
       @exit_state_stack = []
-      if(curr_state and curr_state.substates_are_concurrent)
+      full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.substates_are_concurrent)
+      for i = 0; i < exit_match_index; i++ 
+        curr_state = exit_states[i]
+        @exit_state_stack.push(curr_state)
+      end
+      
+      #Now that we have the full stack of states to exit
+      #we can exit them...
+      unwind_exit_state_stack();
+      
       
     end #end goto_state
     
@@ -208,7 +222,156 @@ module Stativus
     # Private functions
     #
     private
+    
+    # this function exits all items next on the exit state stack
+    def unwind_exit_state_stack
+      @exit_state_stack = @exit_state_stack || []
+      state_to_exit = @exit_state_stack.shift
+      
+      if state_to_exit
+        if(state_to_exit.will_exit_state)
+          
+          state_restart = {
+            :statechart => self,
+            :start => state_to_exit
+          }
+          #todo : i'm pretty sure this won't work as written...
+          state_restart[:restart] = Proc.new {
+            #if(debugMode) puts ['RESTART: after async processing on,', self[:start].name, 'is about to fully exit'].join(' ')
+            @statechart.full_exit(state_restart[:start])
+          }
+          delay_for_async = state_to_exit.will_exit_state(state_restart)
+          
+          full_exit(state_to_exit) unless delay_for_async
+        end
+      else
+        @exit_state_stack = nil
+        initiate_enter_state_sequence
+      end
+    end
+    
+    def full_exit(state)
+      return unless state
+      exit_state_handled = false
+      state.exit if(state.respond_to?(:exit))
+      state.did_exit_state if(state.respond_to(:did_exit_state))
+      #todo: if (DEBUG_MODE) console.log('EXIT: '+state.name);
+      unwind_exit_state_stack
+    
+    def full_exit_from_substates(tree, stop_state)
+      
+      return if(!tree || !stop_state)
+      
+      all_states = @all_states[tree]
+      curr_states = @current_state
+      @exit_state_stack = @exit_state_stack || []
+      
+      stop_state.substates.each do |state|
+        substate_tree = [SUBSTATE_DELIM, tree, stop_state.name, state].join("=>")
+        curr_state = curr_states[substate_tree]
         
+        while(curr_state and curr_state !== stop_state)
+          exit_state_handled = false
+          @exit_state_stack.unshift(curr_state)
+          
+          #check to see if it has substates
+          full_exit_from_substates(tree, curr_state) if(curr_state.has_concurrent_substates)
+          
+          #up to the next parent
+          curr = curr_state.parent_state
+          curr_state = all_states[curr]
+        end
+        
+      end
+      
+    end
+    
+    def initiate_enter_state_sequence
+      enter_states = @enter_states
+      enter_match_index = @enter_state_match_index
+      concurrent_tree = @enter_state_concurrent_tree
+      tree = @enter_state_tree
+      all_states = @all_states[tree]
+      
+      #initalize the enter state stack
+      @enter_state_stack = @enter_state_stack || []
+      
+      # Finally, from the common parent state, but not including the parent state,
+      # enter the sub states down to the requested state. If the requested state
+      # has an initial sub state, then we must enter it too
+      i = enter_match_index - 1
+      curr_state = enter_states[i]
+      if(curr_state)
+        cascade_enter_substates(curr_state, enter_states, 
+                                (i-1), concurrent_tree || tree, all_states)
+      end
+      
+      #once, we have fully hydrated the Enter State Stack, we must actually async unwind it 
+      unwind_enter_state_stack
+      
+      #cleanup
+      @enter_states = @enter_state_match_index = @enter_state_concurrent_tree = 
+      @enter_state_tree = nil
+      
+    end
+    
+    def cascade_enter_substates(start, required_states, index, tree, all_states)
+      return unless start
+      
+      name = start.name
+      @enter_state_stack.push(start)
+      @current_state[tree] = start
+      start.local_concurrent_state = tree
+      
+      if(start.has_concurrent_substates)
+        tree = start.glboal_concurrent_state || DEFAULT_TREE
+        next_tree = [SUBSTATE_DELIM,tree,name].join("=>")
+        start.history = start.history || {}
+        subsates = start.substates || []
+        substates.each do |x|
+          next_tree = tree +"=>"+x
+          curr_state = all_states[x]
+          
+          # Now, we have to push the item onto the active subtrees for
+          # the base tree for later use of the events.
+          b_tree = curr_state.glboal_concurrent_state || DEFAULT_TREE
+          a_trees = active_subtrees[bTree] || []
+          a_trees.unshift(next_tree)
+          @active_subtrees[b_tree] = a_trees
+          index -=1 if(index > -1 && required_states[index] == curr_state)
+          cascade_enter_substates(curr_state, required_states, index, next_tree, all_states)
+        end
+        return
+      else
+        curr_state = required_states[index]
+        if(curr_state)
+          parent_state = all_states[curr_state.parent_state]
+          if(parent_state)
+            if(parent_state.has_concurrent_substates)
+              parent_state.history[tree] = curr_state.name
+            else
+              parent_state.history = current_state.name
+            end
+          end #end parent state
+          
+          index -=1 if(index > -1 && required_states[index] == curr_state)
+          cascade_enter_substates(curr_state, required_states, index, next_tree, all_states)
+        else
+          curr_state = all_states[start.initial_substate]
+          cascade_enter_substates(curr_state, required_states, index, next_tree, all_states)
+        end
+      end
+  
+    end
+        
+    def unwind_enter_state_stack
+      @exit_state_stack = @exit_state_stack || []
+      state_to_enter = @enter_state_stack.shift()
+      
+      if state_to_enter
+        if 
+      
+    end
     def check_all_current_states(requested_state, tree)
       current_states = @current_state[tree] || []
       
