@@ -139,7 +139,7 @@ module Stativus
     # state is the initial state of the application
     # in the default tree
     def start_statechart(state)
-      self.gotoState(init, DEFAULT_TREE)
+      self.goto_state(init, DEFAULT_TREE)
     end
   
     def goto_state(requested_state_name, tree, concurrent_tree)
@@ -169,8 +169,38 @@ module Stativus
       
       # Get the parent states for the current state and the registered state.
       # we will use them to find the commen parent state
+      enter_states = parent_states_with_root(requested_state)
+      exit_states = curr_state ? parent_states_with_root(curr_state) : []
+      #
+      # continue by finding the common parent state for the current and 
+      # requested states:
+      #
+      # At most, this takes O(m^2) time, where m is the maximum depth from the 
+      # root of the tree to either the requested state or the current state.
+      # Will always be less than or equal to O(n^2), where n is the number
+      # of states in the tree
+      enter_match_index = -1
+      exit_state.each_index do |idx|
+        exit_match_index = idx
+        enter_match_index = enter_states.index(exit_state[idx])
+        break if(enter_match_index != nil)    
+      end
       
-      enter_states = this.
+      # In the case where we don't find a common parent state, we 
+      # must enter from the root state
+      enter_match_state = enter_states.length -1 if(enter_match_index == nil)
+      
+      #setup the enter state sequence
+      @enter_states = enterstates
+      @enter_state_match_index = enter_match_index
+      @enter_state_concurrent_tree = concurrent_tree
+      @enter_state_tree = tree
+      
+      # Now, we will exit all the underlying states till we reach the common
+      # parent state. We do not exit the parent state because we transition
+      # within it.
+      @exit_state_stack = []
+      if(curr_state and curr_state.substates_are_concurrent)
       
     end #end goto_state
     
