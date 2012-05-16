@@ -188,7 +188,7 @@ module Stativus
       exit_match_index = 0
       exit_states.each_index do |idx|
         exit_match_index = idx
-        enter_match_index = enter_states.index(exit_state[idx])
+        enter_match_index = enter_states.index(exit_states[idx])
         break if(enter_match_index != nil)    
       end
       
@@ -206,7 +206,7 @@ module Stativus
       # parent state. We do not exit the parent state because we transition
       # within it.
       @exit_state_stack = []
-      full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.substates_are_concurrent)
+      full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.has_concurrent_substates)
       0.upto(exit_match_index) do |i|
         curr_state = exit_states[i]
         @exit_state_stack.push(curr_state)
@@ -230,7 +230,7 @@ module Stativus
       state_to_exit = @exit_state_stack.shift
       
       if state_to_exit
-        if(state_to_exit.will_exit_state)
+        if(state_to_exit.respond_to?(:will_exit_state))
           
           state_restart = {
             :statechart => self,
@@ -419,7 +419,7 @@ module Stativus
     end
     
     def flush_pending_events
-      #todo
+      #todo implement me!
     end
     
     def check_all_current_states(requested_state, tree)

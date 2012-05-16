@@ -16,7 +16,7 @@ class AddState < Test::Unit::TestCase
   
   
   def test_states_were_added
-    asset(true, "did work")
+    assert(true, "did work")
     
   end
 
