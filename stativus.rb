@@ -96,7 +96,7 @@ module Stativus
       @states_with_concurrent_substates = {}
       @current_subsates = {}
       @current_state = {}
-      @current_state[DEFAULT_TREE] = {}
+      @current_state[DEFAULT_TREE] = nil
       @goto_state = false
       @send_event_locked = false
       @pending_state_transitions = []
@@ -185,7 +185,8 @@ module Stativus
       # Will always be less than or equal to O(n^2), where n is the number
       # of states in the tree
       enter_match_index = -1
-      exit_state.each_index do |idx|
+      exit_match_index = 0
+      exit_states.each_index do |idx|
         exit_match_index = idx
         enter_match_index = enter_states.index(exit_state[idx])
         break if(enter_match_index != nil)    
@@ -196,7 +197,7 @@ module Stativus
       enter_match_state = enter_states.length -1 if(enter_match_index == nil)
       
       #setup the enter state sequence
-      @enter_states = enterstates
+      @enter_states = enter_states
       @enter_state_match_index = enter_match_index
       @enter_state_concurrent_tree = concurrent_tree
       @enter_state_tree = tree
@@ -425,7 +426,7 @@ module Stativus
         return true
       elsif(current_states.class == String and requested_state == @all_states[tree][current_states])
         return true
-      elsif(current_states.class == Array and currnet_states.contains(requested_state))
+      elsif(current_states.class == Array and current_states.include?(requested_state))
         return true
       else
         return false
