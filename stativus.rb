@@ -255,7 +255,7 @@ module Stativus
       return unless state
       exit_state_handled = false
       state.exit if(state.respond_to?(:exit))
-      state.did_exit_state if(state.respond_to(:did_exit_state))
+      state.did_exit_state if(state.respond_to?(:did_exit_state))
       #todo: if (DEBUG_MODE) console.log('EXIT: '+state.name);
       unwind_exit_state_stack
     end
@@ -264,8 +264,8 @@ module Stativus
       return unless state
       enter_state_handled = false
       #if (DEBUG_MODE) console.log('ENTER: '+state.name);
-      state.enter if state.respond_to(:enter)
-      state.did_enter_state if state.respond_to(:did_enter_state)
+      state.enter if state.respond_to?(:enter)
+      state.did_enter_state if state.respond_to?(:did_enter_state)
       unwind_enter_state_stack()
     end
       
@@ -381,7 +381,7 @@ module Stativus
       state_to_enter = @enter_state_stack.shift()
       
       if state_to_enter
-        if state_to_enter.will_enter_state
+        if state_to_enter.respond_to?(:will_enter_state)
           
           state_restart = {
             :statechart => self,
@@ -412,12 +412,15 @@ module Stativus
     end
     
     def flush_pending_state_transitions
-      pending = @pending_state_tansitions.shift
+      pending = @pending_state_transitions.shift
       return false unless pending
       goto_state(pending.requested_state, pending.tree)
       return true
     end
     
+    def flush_pending_events
+      #todo
+    end
     
     def check_all_current_states(requested_state, tree)
       current_states = @current_state[tree] || []
