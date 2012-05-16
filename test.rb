@@ -14,6 +14,7 @@ class Document < Stativus::State
   parent_state Book
 end
 statechart.add_state(Document)
+statechart.goto_state("Book", "default")
 
 
 

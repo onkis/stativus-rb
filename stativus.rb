@@ -129,7 +129,7 @@ module Stativus
     
       obj[state.name] = state
     
-      sub_states = state.states
+      sub_states = state.states || []
       
       sub_states.each do |sub_state|
         sub_state.parent_state = state
@@ -147,7 +147,7 @@ module Stativus
       self.goto_state(init, DEFAULT_TREE)
     end
   
-    def goto_state(requested_state_name, tree, concurrent_tree)
+    def goto_state(requested_state_name, tree, concurrent_tree=nil)
       all_states = @all_states[tree]
       
       #First, find the current tree off of the concurrentTree, then the main tree
@@ -206,7 +206,7 @@ module Stativus
       # within it.
       @exit_state_stack = []
       full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.substates_are_concurrent)
-      for i = 0; i < exit_match_index; i++ 
+      0.upto(exit_match_index) do |i|
         curr_state = exit_states[i]
         @exit_state_stack.push(curr_state)
       end
@@ -257,6 +257,17 @@ module Stativus
       state.did_exit_state if(state.respond_to(:did_exit_state))
       #todo: if (DEBUG_MODE) console.log('EXIT: '+state.name);
       unwind_exit_state_stack
+    end
+    
+    def full_enter(state)
+      return unless state
+      enter_state_handled = false
+      #if (DEBUG_MODE) console.log('ENTER: '+state.name);
+      state.enter if state.respond_to(:enter)
+      state.did_enter_state if state.respond_to(:did_enter_state)
+      unwind_enter_state_stack()
+    end
+      
     
     def full_exit_from_substates(tree, stop_state)
       
@@ -270,7 +281,7 @@ module Stativus
         substate_tree = [SUBSTATE_DELIM, tree, stop_state.name, state].join("=>")
         curr_state = curr_states[substate_tree]
         
-        while(curr_state and curr_state !== stop_state)
+        while(curr_state and curr_state != stop_state)
           exit_state_handled = false
           @exit_state_stack.unshift(curr_state)
           
@@ -369,9 +380,44 @@ module Stativus
       state_to_enter = @enter_state_stack.shift()
       
       if state_to_enter
-        if 
+        if state_to_enter.will_enter_state
+          
+          state_restart = {
+            :statechart => self,
+            :start => state_to_enter
+          }
+          state_restart[:restart] = Proc.new{
+            #if (DEBUG_MODE) console.log(['RESTART: after async processing on,', this._start.name, 'is about to fully enter'].join(' '));
+            @statechart.full_enter(state_restart[:state_to_enter])
+          }
+          delay_for_async = state_to_enter.will_enter_state(state_restart)
+          # if (DEBUG_MODE) {
+          #   if (delayForAsync) { console.log('ASYNC: Delayed enter '+stateToEnter.name); }
+          #   else { console.warn('ASYNC: Didn\'t return \'true\' willExitState on '+stateToEnter.name+' which is needed if you want async'); }
+          # }
+        end
+        full_enter(state_to_enter) unless delay_for_async
       
+      else  
+        @enter_state_stack = nil
+        # Ok, we're done with the current state transition. Make sure to unlock
+        # the goToState and let other pending state transitions
+        @goto_state_locked = false
+        more = flush_pending_state_transitions
+        # Once pending state transitions are flushed then go ahead and start flush
+        # pending actions
+        flush_pending_events if not more and not @in_initial_setup
+      end
     end
+    
+    def flush_pending_state_transitions
+      pending = @pending_state_tansitions.shift
+      return false unless pending
+      goto_state(pending.requested_state, pending.tree)
+      return true
+    end
+    
+    
     def check_all_current_states(requested_state, tree)
       current_states = @current_state[tree] || []
       
