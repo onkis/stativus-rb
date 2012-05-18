@@ -13,9 +13,19 @@ module Stativus
     def initialize(statechart)
       @statechart = statechart
       @substates = []
-      @has_concurrent_substates = false unless @has_conurrent_substates
-      @global_concurrent_state = DEFAULT_TREE unless @global_concurrent_state
-      puts @global_concurrent_state
+      
+      @has_concurrent_substates = self.respond_to?(:_has_concurrent_substates) ? self._has_concurrent_substates : false
+      @global_concurrent_state = self.respond_to?(:_global_concurrent_state) ? self._global_concurrent_state : DEFAULT_TREE
+      @states = self.respond_to?(:_states) ? self._states : []
+      @initial_substate = self.respond_to?(:_initial_substate) ? self._initial_substate : nil
+      @parent_state = self.respond_to?(:_parent_state) ? self._parent_state : nil
+      
+      puts "state init"
+      puts self.class.to_s
+      puts @has_concurrent_substates
+      puts @parent_state
+      
+      
     end
   
   
@@ -50,25 +60,34 @@ module Stativus
     #
     #data methods, override these in your implementations
     #
-
-    def self.has_concurrent_substates(b)
-      @has_concurrent_substates = b
+    def self.has_concurrent_substates(value)
+      send :define_method, :_has_concurrent_substates do
+        return value
+      end
     end
-  
+    
     def self.global_concurrent_state(state)
-      @global_concurrent_state = state 
-    end
-  
-    def self.parent_state(state)
-      @parent_state = state
+      send :define_method, :_global_concurrent_state do
+        return state
+      end
     end
   
     def self.states(*states)
-      @staes = states
+      send :define_method, :_states do
+        return states
+      end
     end
     
     def self.initial_substate(state)
-      @initial_substate = name
+      send :define_method, :_initial_substate do
+        return state
+      end
+    end
+    
+    def self.parent_state(state)
+      send :define_method, :_parent_state do
+        return state
+      end
     end
   
     def name
@@ -107,7 +126,7 @@ module Stativus
   
     def add_state(state_class)
       state = state_class.new(self)
-      puts state.global_concurrent_state
+      #puts state.global_concurrent_state
       tree = state.global_concurrent_state
       parent_state = state.parent_state
       current_tree = @states_with_concurrent_substates[tree]
@@ -137,7 +156,7 @@ module Stativus
         add_state(sub_state)
       end
       
-      puts @all_states
+      #puts @all_states
     end #add_state
   
     # call this in your programs main
@@ -171,7 +190,9 @@ module Stativus
       # Lock for the current state transition, so that it all gets sorted out
       # in the right order
       @goto_state_locked = true
-      
+      #puts "requested state"
+      #puts requested_state
+      #puts curr_state
       # Get the parent states for the current state and the registered state.
       # we will use them to find the commen parent state
       enter_states = parent_states_with_root(requested_state)
@@ -336,7 +357,7 @@ module Stativus
       start.local_concurrent_state = tree
       
       if(start.has_concurrent_substates)
-        tree = start.glboal_concurrent_state || DEFAULT_TREE
+        tree = start.global_concurrent_state || DEFAULT_TREE
         next_tree = [SUBSTATE_DELIM,tree,name].join("=>")
         start.history = start.history || {}
         subsates = start.substates || []
@@ -346,7 +367,7 @@ module Stativus
           
           # Now, we have to push the item onto the active subtrees for
           # the base tree for later use of the events.
-          b_tree = curr_state.glboal_concurrent_state || DEFAULT_TREE
+          b_tree = curr_state.global_concurrent_state || DEFAULT_TREE
           a_trees = active_subtrees[bTree] || []
           a_trees.unshift(next_tree)
           @active_subtrees[b_tree] = a_trees
@@ -452,7 +473,8 @@ module Stativus
       curr = state
       
       ret.push(curr)
-      
+      #puts "parent states:"
+      #puts curr
       curr = state_object(curr.parent_state, curr.global_concurrent_state)
       
       while(curr)

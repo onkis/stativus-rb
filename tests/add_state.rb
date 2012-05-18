@@ -31,7 +31,8 @@ class AddState < Test::Unit::TestCase
   def test_state_has_proper_settings
     a = @default_tree["A"]
     b = @default_tree["B"]
-    
+    assert(a.has_concurrent_substates, "a should have concurrent sub states")
+    assert_instance_of(A, b.parent_state, "a is the parent of B")
     
   end
 
