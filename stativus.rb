@@ -169,7 +169,7 @@ module Stativus
       @in_initial_setup = true
       self.goto_state(state, DEFAULT_TREE)
       @in_initial_setup = false
-      self.flush_pending_events
+      flush_pending_events
     end
   
     def goto_state(requested_state_name, tree, concurrent_tree=nil)
@@ -212,6 +212,7 @@ module Stativus
       enter_match_index = nil
       exit_match_index = 0
       exit_states.each_index do |idx|
+        puts "each_index"
         exit_match_index = idx
         enter_match_index = enter_states.index(exit_states[idx])
         break if(enter_match_index >= 0)    
@@ -220,7 +221,7 @@ module Stativus
       # In the case where we don't find a common parent state, we 
       # must enter from the root state
       enter_match_index = enter_states.length()-1 if(enter_match_index == nil)
-      
+    
       #setup the enter state sequence
       @enter_states = enter_states
       @enter_state_match_index = enter_match_index
@@ -380,7 +381,7 @@ module Stativus
         return
       else
         curr_state = required_states[index]
-        if(curr_state)
+        if(curr_state and curr_state.is_a?(State))
           parent_state = all_states[curr_state.parent_state]
           if(parent_state)
             if(parent_state.has_concurrent_substates)
@@ -432,7 +433,7 @@ module Stativus
         more = flush_pending_state_transitions
         # Once pending state transitions are flushed then go ahead and start flush
         # pending actions
-        flush_pending_events if not more and not @in_initial_setup
+        self.flush_pending_events if not more and not @in_initial_setup
       end
     end
     
@@ -445,6 +446,7 @@ module Stativus
     
     def flush_pending_events
       #todo implement me!
+      puts "flush todo"
     end
     
     def check_all_current_states(requested_state, tree)
