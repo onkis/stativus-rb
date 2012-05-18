@@ -1,3 +1,4 @@
+require 'ruby-debug'
 module Stativus
   class State
     attr_accessor :global_concurrent_state, 
@@ -56,10 +57,11 @@ module Stativus
       end
     end
     alias :send_action :send_event
+
     #
-    #
-    #data methods, override these in your implementations
-    #
+    # My ruby foo is weak and i really with there was another way to setup
+    # data on a class other than calling send :define_method then checking
+    # for the existence of this method...
     def self.has_concurrent_substates(value)
       send :define_method, :_has_concurrent_substates do
         return value
@@ -91,6 +93,7 @@ module Stativus
     end
   
     def name
+      puts "name"
       return self.class.to_s
     end
   
@@ -162,13 +165,16 @@ module Stativus
     # call this in your programs main
     # state is the initial state of the application
     # in the default tree
-    def start_statechart(state)
-      self.goto_state(init, DEFAULT_TREE)
+    def start(state)
+      @in_initial_setup = true
+      self.goto_state(state, DEFAULT_TREE)
+      @in_initial_setup = false
+      self.flush_pending_events
     end
   
     def goto_state(requested_state_name, tree, concurrent_tree=nil)
       all_states = @all_states[tree]
-      
+     
       #First, find the current tree off of the concurrentTree, then the main tree
       curr_state = concurrent_tree ? @current_state[concurrent_tree] : @current_state[tree]
       
@@ -190,9 +196,7 @@ module Stativus
       # Lock for the current state transition, so that it all gets sorted out
       # in the right order
       @goto_state_locked = true
-      #puts "requested state"
-      #puts requested_state
-      #puts curr_state
+      
       # Get the parent states for the current state and the registered state.
       # we will use them to find the commen parent state
       enter_states = parent_states_with_root(requested_state)
@@ -205,17 +209,17 @@ module Stativus
       # root of the tree to either the requested state or the current state.
       # Will always be less than or equal to O(n^2), where n is the number
       # of states in the tree
-      enter_match_index = -1
+      enter_match_index = nil
       exit_match_index = 0
       exit_states.each_index do |idx|
         exit_match_index = idx
         enter_match_index = enter_states.index(exit_states[idx])
-        break if(enter_match_index != nil)    
+        break if(enter_match_index >= 0)    
       end
       
       # In the case where we don't find a common parent state, we 
       # must enter from the root state
-      enter_match_state = enter_states.length -1 if(enter_match_index == nil)
+      enter_match_index = enter_states.length()-1 if(enter_match_index == nil)
       
       #setup the enter state sequence
       @enter_states = enter_states
@@ -228,7 +232,7 @@ module Stativus
       # within it.
       @exit_state_stack = []
       full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.has_concurrent_substates)
-      0.upto(exit_match_index) do |i|
+      0.upto(exit_match_index || 0) do |i|
         curr_state = exit_states[i]
         @exit_state_stack.push(curr_state)
       end
@@ -350,7 +354,6 @@ module Stativus
     
     def cascade_enter_substates(start, required_states, index, tree, all_states)
       return unless start
-      
       name = start.name
       @enter_state_stack.push(start)
       @current_state[tree] = start
@@ -360,7 +363,7 @@ module Stativus
         tree = start.global_concurrent_state || DEFAULT_TREE
         next_tree = [SUBSTATE_DELIM,tree,name].join("=>")
         start.history = start.history || {}
-        subsates = start.substates || []
+        substates = start.substates || []
         substates.each do |x|
           next_tree = tree +"=>"+x
           curr_state = all_states[x]
@@ -368,7 +371,7 @@ module Stativus
           # Now, we have to push the item onto the active subtrees for
           # the base tree for later use of the events.
           b_tree = curr_state.global_concurrent_state || DEFAULT_TREE
-          a_trees = active_subtrees[bTree] || []
+          a_trees = active_subtrees[b_tree] || []
           a_trees.unshift(next_tree)
           @active_subtrees[b_tree] = a_trees
           index -=1 if(index > -1 && required_states[index] == curr_state)
@@ -398,6 +401,7 @@ module Stativus
     end
         
     def unwind_enter_state_stack
+
       @exit_state_stack = @exit_state_stack || []
       state_to_enter = @enter_state_stack.shift()
       
