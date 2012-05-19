@@ -19,14 +19,7 @@ module Stativus
       @global_concurrent_state = self.respond_to?(:_global_concurrent_state) ? self._global_concurrent_state : DEFAULT_TREE
       @states = self.respond_to?(:_states) ? self._states : []
       @initial_substate = self.respond_to?(:_initial_substate) ? self._initial_substate : nil
-      @parent_state = self.respond_to?(:_parent_state) ? self._parent_state : nil
-      
-      puts "state init"
-      puts self.class.to_s
-      puts @has_concurrent_substates
-      puts @parent_state
-      
-      
+      @parent_state = self.respond_to?(:_parent_state) ? self._parent_state : nil      
     end
   
   
@@ -93,7 +86,6 @@ module Stativus
     end
   
     def name
-      puts "name"
       return self.class.to_s
     end
   
@@ -129,7 +121,6 @@ module Stativus
   
     def add_state(state_class)
       state = state_class.new(self)
-      #puts state.global_concurrent_state
       tree = state.global_concurrent_state
       parent_state = state.parent_state
       current_tree = @states_with_concurrent_substates[tree]
@@ -158,8 +149,6 @@ module Stativus
         sub_state.global_concurrent_state = tree
         add_state(sub_state)
       end
-      
-      #puts @all_states
     end #add_state
   
     # call this in your programs main
@@ -212,7 +201,6 @@ module Stativus
       enter_match_index = nil
       exit_match_index = 0
       exit_states.each_index do |idx|
-        puts "each_index"
         exit_match_index = idx
         enter_match_index = enter_states.index(exit_states[idx])
         break if(enter_match_index >= 0)    
@@ -479,8 +467,6 @@ module Stativus
       curr = state
       
       ret.push(curr)
-      #puts "parent states:"
-      #puts curr
       curr = state_object(curr.parent_state, curr.global_concurrent_state)
       
       while(curr)

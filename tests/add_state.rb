@@ -34,6 +34,7 @@ class AddState < Test::Unit::TestCase
     b = @default_tree["B"]
     assert(a.has_concurrent_substates, "a should have concurrent sub states")
     assert_equal("A", b.parent_state, "a is the parent of B")
+    assert_equal(["B", "C"], a.substates, "a should have 2 substates")
     
   end
 
