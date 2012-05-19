@@ -312,7 +312,7 @@ module Stativus
         
         #check to see if we're at the end of the tree
         return [handled, found] if(tree and ss_name == responder.name)
-        responder = not handled and responder.parent_state ? all_states[responder.parent_state] : nil
+        responder = (!handled && responder.parent_state) ? all_states[responder.parent_state] : nil
       end
       
       return [handled, found]
