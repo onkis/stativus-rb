@@ -230,14 +230,93 @@ module Stativus
       #we can exit them...
       unwind_exit_state_stack();
       
-      
     end #end goto_state
     
+    def send_event(evt, *args)
+      
+      # We want to prevent any events from occurring until
+      # we have completed the state transitions and events
+      if @in_initial_setup or @goto_state_locked or @send_event_locked
+        @pending_events.push({
+          :evt => evt,
+          :args => args
+        })
+        return
+      end
+      
+      @send_event_locked = true
+      
+      self.structure_crawl(evt, args)
+      
+      # Now, that the states have a chance to process the first action
+      # we can go ahead and flush the queued events
+      @send_event_locked = false;
+      
+      self.flush_pending_events() unless @in_initial_setup      
+        
+    end
     #
     # Private functions
     #
     private
     
+    def structure_crawl(evt, args)
+      current_states = @current_state
+      ss = Stativus::SUBSTATE_DELIM
+      for tree in current_states.keys
+        handled = false
+        s_tree = nil
+        responder = current_states[tree]
+        
+        next if(!responder or tree.slice(0, ss.length()) == ss)
+        
+        all_states = @all_states[tree] || []
+        a_trees = @active_subtrees[tree] || []
+        
+        0.upto(a_trees.length()) do |i|
+          s_tree = a_tree[i]
+          s_responder = current_states[s_tree]
+          tmp = handled ? [true, true] : self.cascade_events(evt, args, responder, all_states, s_tree)
+          handled = tmp[0]
+          #if (DEBUG_MODE) found = tmp[1];
+        end
+        if(not handled)
+          tmp = self.cascade_events(evt, args, responder, all_states, null)
+          handled = tmp[0]
+          # if (DEBUG_MODE){ 
+          #   if (!found) found = tmp[1];
+          # }
+          
+        end        
+        # if (DEBUG_MODE){
+        #   if(!found) console.log(['ACTION/EVENT:{'+evt+'} with', args.length || 0, 'argument(s)','found NO state to handle this'].join(' '));
+        # }
+      end
+    end
+    
+    def cascade_events(evt, args, responder, all_states, tree)
+      found = false
+      
+      if(tree)
+        trees = tree.split('=>')
+        len = trees.length() || 0
+        ss_name = trees[len-1]
+      end
+      
+      while(not handled and responder)
+        if(responder.respond_to?(evt))
+          #if (DEBUG_MODE) console.log(['EVENT:',responder.name,'fires','['+evt+']', 'with', args.length || 0, 'argument(s)'].join(' '));
+          handled = responder.send(evt, args)
+          found = true
+        end
+        
+        #check to see if we're at the end of the tree
+        return [handled, found] if(tree and ss_name == responder.name)
+        responder = not handled and responder.parent_state ? all_states[responder.parent_state] : nil
+      end
+      
+      return [handled, found]
+    end
     # this function exits all items next on the exit state stack
     def unwind_exit_state_stack
       @exit_state_stack = @exit_state_stack || []
