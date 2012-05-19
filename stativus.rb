@@ -512,8 +512,9 @@ module Stativus
     end
     
     def flush_pending_events
-      #todo implement me!
-      puts "flush todo"
+      pending_event = @pending_events.shift()
+      return if(pending_event == nil)
+      self.send_event(pending_event.evt, pending_event.args)
     end
     
     def check_all_current_states(requested_state, tree)
