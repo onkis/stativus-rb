@@ -246,13 +246,13 @@ module Stativus
       
       @send_event_locked = true
       
-      self.structure_crawl(evt, args)
+      structure_crawl(evt, args)
       
       # Now, that the states have a chance to process the first action
       # we can go ahead and flush the queued events
       @send_event_locked = false;
       
-      self.flush_pending_events() unless @in_initial_setup      
+      flush_pending_events() unless @in_initial_setup      
         
     end
     #
@@ -264,6 +264,7 @@ module Stativus
       current_states = @current_state
       ss = Stativus::SUBSTATE_DELIM
       for tree in current_states.keys
+        next unless tree
         handled = false
         s_tree = nil
         responder = current_states[tree]
@@ -274,14 +275,14 @@ module Stativus
         a_trees = @active_subtrees[tree] || []
         
         0.upto(a_trees.length()) do |i|
-          s_tree = a_tree[i]
+          s_tree = a_trees[i]
           s_responder = current_states[s_tree]
-          tmp = handled ? [true, true] : self.cascade_events(evt, args, responder, all_states, s_tree)
+          tmp = handled ? [true, true] : cascade_events(evt, args, responder, all_states, s_tree)
           handled = tmp[0]
           #if (DEBUG_MODE) found = tmp[1];
         end
         if(not handled)
-          tmp = self.cascade_events(evt, args, responder, all_states, null)
+          tmp = cascade_events(evt, args, responder, all_states, null)
           handled = tmp[0]
           # if (DEBUG_MODE){ 
           #   if (!found) found = tmp[1];
@@ -296,7 +297,7 @@ module Stativus
     
     def cascade_events(evt, args, responder, all_states, tree)
       found = false
-      
+      handled = nil
       if(tree)
         trees = tree.split('=>')
         len = trees.length() || 0
@@ -500,7 +501,7 @@ module Stativus
         more = flush_pending_state_transitions
         # Once pending state transitions are flushed then go ahead and start flush
         # pending actions
-        self.flush_pending_events if not more and not @in_initial_setup
+        flush_pending_events if not more and not @in_initial_setup
       end
     end
     

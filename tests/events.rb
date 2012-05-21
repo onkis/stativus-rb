@@ -13,8 +13,8 @@ module AllEnterExit
     $state_transitions.push "EXT: "+self.name
   end
   
-  def test_event
-    $state_transitions.push "EVT: "+self.name+".test_event"
+  def test_event(*args)
+    $state_transitions.push("EVT: "+self.name+".test_event")
   end
   
 end
@@ -41,7 +41,7 @@ class FirstFirst < Stativus::State
   include AllEnterExit
   parent_state "First"
   
-  def test_event
+  def test_event(*args)
     $state_transitions.push('EVT: '+self.name+'.test_event')
     self.goto_state("FirstSecond")
     return true
@@ -78,7 +78,7 @@ class Events < Test::Unit::TestCase
 
   end #end setup
   
-  def test_event_propogation
+  def test_event_propagation
     expected_events = ['EVT','EVT', 'EXT', 'ENT', 'EVT', 'EVT', 'EVT', 'EVT', 'EVT']
     
     @statechart.send_event('test_event')
