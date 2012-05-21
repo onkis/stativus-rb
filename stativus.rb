@@ -203,7 +203,7 @@ module Stativus
       exit_states.each_index do |idx|
         exit_match_index = idx
         enter_match_index = enter_states.index(exit_states[idx])
-        break if(enter_match_index >= 0)    
+        break if(enter_match_index != nil)    
       end
       
       # In the case where we don't find a common parent state, we 
@@ -465,10 +465,10 @@ module Stativus
           end #end parent state
           
           index -=1 if(index > -1 && required_states[index] == curr_state)
-          cascade_enter_substates(curr_state, required_states, index, next_tree, all_states)
+          cascade_enter_substates(curr_state, required_states, index, tree, all_states)
         else
           curr_state = all_states[start.initial_substate]
-          cascade_enter_substates(curr_state, required_states, index, next_tree, all_states)
+          cascade_enter_substates(curr_state, required_states, index, tree, all_states)
         end
       end
   
