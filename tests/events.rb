@@ -13,7 +13,7 @@ module AllEnterExit
     $state_transitions.push "EXT: "+self.name
   end
   
-  def test_event(*args)
+  def test_event
     $state_transitions.push("EVT: "+self.name+".test_event")
   end
   

@@ -306,8 +306,13 @@ module Stativus
       
       while(not handled and responder)
         if(responder.respond_to?(evt))
+          method = responder.method(evt)
           #if (DEBUG_MODE) console.log(['EVENT:',responder.name,'fires','['+evt+']', 'with', args.length || 0, 'argument(s)'].join(' '));
-          handled = responder.send(evt, args)
+          if(method.arity != 0)
+            handled = method.call(args)
+          else
+            handled = method.call()
+          end
           found = true
         end
         
