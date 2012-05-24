@@ -88,6 +88,10 @@ module Stativus
     def name
       return self.class.to_s
     end
+    
+    def to_s
+      return self.class.to_s
+    end
   
   end
 
@@ -168,6 +172,7 @@ module Stativus
       curr_state = concurrent_tree ? @current_state[concurrent_tree] : @current_state[tree]
       
       requested_state = all_states[requested_state_name]
+
       # if the current state is the same as the requested state do nothing
       return if(check_all_current_states(requested_state, concurrent_tree || tree))
       
@@ -220,10 +225,15 @@ module Stativus
       # parent state. We do not exit the parent state because we transition
       # within it.
       @exit_state_stack = []
-      full_exit_from_substates(tree, curr_state) if(curr_state and curr_state.has_concurrent_substates)
-      0.upto(exit_match_index || 0) do |i|
-        curr_state = exit_states[i]
-        @exit_state_stack.push(curr_state)
+      full_exit_from_substates(tree, curr_state) if(curr_state != nil and curr_state.has_concurrent_substates)
+      
+      
+      if exit_match_index == nil || exit_match_index-1 <= 0
+        exit_match_index = 0 
+      else
+        0.upto(exit_match_index-1) do |i|
+          @exit_state_stack.push(exit_states[i])
+        end
       end
       
       #Now that we have the full stack of states to exit
@@ -313,6 +323,9 @@ module Stativus
           else
             handled = method.call()
           end
+          #ruby has implict returns therefore you actually
+          #have to explicitly return true
+          handled = handled == false ? false : true
           found = true
         end
         
@@ -432,7 +445,6 @@ module Stativus
       @enter_state_stack.push(start)
       @current_state[tree] = start
       start.local_concurrent_state = tree
-      
       if(start.has_concurrent_substates)
         tree = start.global_concurrent_state || DEFAULT_TREE
         next_tree = [SUBSTATE_DELIM,tree,name].join("=>")

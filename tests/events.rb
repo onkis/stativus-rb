@@ -6,10 +6,12 @@ $state_transitions = []
 
 module AllEnterExit
   def enter
+    #puts "ENT: "+self.name
     $state_transitions.push "ENT: "+self.name
   end
   
   def exit
+    #puts "EXT: "+self.name
     $state_transitions.push "EXT: "+self.name
   end
   
