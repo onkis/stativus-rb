@@ -227,8 +227,7 @@ module Stativus
       @exit_state_stack = []
       full_exit_from_substates(tree, curr_state) if(curr_state != nil and curr_state.has_concurrent_substates)
       
-      
-      if exit_match_index == nil || exit_match_index-1 <= 0
+      if exit_match_index == nil || exit_match_index-1 < 0
         exit_match_index = 0 
       else
         0.upto(exit_match_index-1) do |i|
@@ -238,6 +237,7 @@ module Stativus
       
       #Now that we have the full stack of states to exit
       #we can exit them...
+      
       unwind_exit_state_stack();
       
     end #end goto_state
@@ -284,7 +284,7 @@ module Stativus
         all_states = @all_states[tree] || []
         a_trees = @active_subtrees[tree] || []
         
-        0.upto(a_trees.length()) do |i|
+        0.upto(a_trees.length()-1) do |i|
           s_tree = a_trees[i]
           s_responder = current_states[s_tree]
           tmp = handled ? [true, true] : cascade_events(evt, args, responder, all_states, s_tree)
@@ -292,7 +292,7 @@ module Stativus
           #if (DEBUG_MODE) found = tmp[1];
         end
         if(not handled)
-          tmp = cascade_events(evt, args, responder, all_states, null)
+          tmp = cascade_events(evt, args, responder, all_states, nil)
           handled = tmp[0]
           # if (DEBUG_MODE){ 
           #   if (!found) found = tmp[1];
@@ -354,9 +354,8 @@ module Stativus
             @statechart.full_exit(state_restart[:start])
           }
           delay_for_async = state_to_exit.will_exit_state(state_restart)
-          
-          full_exit(state_to_exit) unless delay_for_async
         end
+        full_exit(state_to_exit) unless delay_for_async
       else
         @exit_state_stack = nil
         initiate_enter_state_sequence
