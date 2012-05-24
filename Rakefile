@@ -1,5 +1,5 @@
 task :default => [:test]
 
 task :test do
-  ruby "tests/add_state.rb"
+  ruby "tests/tests.rb"
 end
