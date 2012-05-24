@@ -273,6 +273,7 @@ module Stativus
     def structure_crawl(evt, args)
       current_states = @current_state
       ss = Stativus::SUBSTATE_DELIM
+      
       for tree in current_states.keys
         next unless tree
         handled = false
@@ -281,13 +282,17 @@ module Stativus
         
         next if(!responder or tree.slice(0, ss.length()) == ss)
         
-        all_states = @all_states[tree] || []
+        all_states = @all_states[tree]
+        
+        next unless all_states
+        
         a_trees = @active_subtrees[tree] || []
         
-        0.upto(a_trees.length()-1) do |i|
-          s_tree = a_trees[i]
+        #0.upto(a_trees.length()-1) do |i|
+        a_trees.each do |s_tree|
+          #s_tree = a_trees[i]
           s_responder = current_states[s_tree]
-          tmp = handled ? [true, true] : cascade_events(evt, args, responder, all_states, s_tree)
+          tmp = handled ? [true, true] : cascade_events(evt, args, s_responder, all_states, s_tree)
           handled = tmp[0]
           #if (DEBUG_MODE) found = tmp[1];
         end
@@ -306,12 +311,12 @@ module Stativus
     end
     
     def cascade_events(evt, args, responder, all_states, tree)
+      
       found = false
       handled = nil
       if(tree)
         trees = tree.split('=>')
-        len = trees.length() || 0
-        ss_name = trees[len-1]
+        ss_name = trees.last
       end
       
       while(not handled and responder)

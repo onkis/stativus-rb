@@ -17,6 +17,7 @@ module AllEnterExit
   
   def test_event
     $state_transitions.push("EVT: "+self.name+".test_event")
+    return false
   end
   
 end
@@ -84,9 +85,11 @@ class Events < Test::Unit::TestCase
     expected_events = ['EVT','EVT', 'EXT', 'ENT', 'EVT', 'EVT', 'EVT', 'EVT', 'EVT']
     $state_transitions = []
     @statechart.send_event('test_event')
-    puts $state_transitions
+    #puts $state_transitions
     assert_equal(4, $state_transitions.length(), "4 transitions after first event")
     @statechart.send_event('test_event')
-    assert_equal(9, $state_transitions.length(), "9 transitions after first event")
+    #puts "second time"
+    #puts $state_transitions
+    assert_equal(9, $state_transitions.length(), "9 transitions after second event")
   end
 end
