@@ -1,4 +1,3 @@
-require 'ruby-debug'
 module Stativus
   class State
     attr_accessor :global_concurrent_state, 

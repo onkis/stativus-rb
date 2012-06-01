@@ -1,3 +1,50 @@
+= stativus-rb
+
+		by Mike Ball
+		http://github.com/onkis/stativus-rb
+
+== DESCRIPTION:
+	A port of the stativus.js statechart library.  Primarly designed to work with
+	ruby motion projects
+	
+== USAGE:
+
+	#create statechart
+	statechart = Stativus.Statechart.new
+
+	#To Define a state
+	class MyState < Stativus::State
+		def enter
+			#do your enter state stuff here
+		end
+		
+		def exit
+			#do your exit stuff here
+		end
+		
+		#actions
+		def my_action
+			self.goto_state('Another')
+		end
+	end
+	#add state to statechart
+	#TODO: make this more automagic this is ruby...
+	statechart.add_state(MyState)
+	
+	#start the statechart
+	statechart.start('MyState') #pass the initial state
+	
+	Look in the tests directory to see more examples of
+	* parallel substates
+	* send_event
+	* parent => child relationship definitions
+	
+== INSTALL:
+
+gem install stativus-rb
+
+== LICENSE:
+
 Copyright (c) 2012 Mike Ball
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
