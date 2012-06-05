@@ -1,7 +1,5 @@
 require 'test/unit'
-require Dir.pwd()+'/stativus.rb'
 require  Dir.pwd()+'/tests/test_states'
-require 'ruby-debug'
 class AddState < Test::Unit::TestCase
   def setup
     @statechart = Stativus::Statechart.new

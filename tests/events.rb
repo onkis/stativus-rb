@@ -1,6 +1,5 @@
 require 'test/unit'
-require Dir.pwd()+'/stativus.rb'
-require 'ruby-debug'
+
 
 $state_transitions = []
 
