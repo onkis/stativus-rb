@@ -41,7 +41,7 @@
 	
 == INSTALL:
 
-gem install stativus-rb
+gem install stativus
 
 == LICENSE:
 
