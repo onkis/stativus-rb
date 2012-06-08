@@ -1,4 +1,5 @@
-class First < Stativus::State
+class First
+  include Stativus::State
   has_concurrent_substates true
   
   def test_event
@@ -7,7 +8,8 @@ class First < Stativus::State
   
 end
 
-class FirstFirst < Stativus::State
+class FirstFirst
+  include Stativus::State
   parent_state "First"
   initial_substate "FirstFirstFirst"
   
@@ -15,7 +17,8 @@ class FirstFirst < Stativus::State
   end
 end
 
-class FirstSecond < Stativus::State
+class FirstSecond
+  include Stativus::State
   parent_state "First"
   inital_substate "FirstSecondFirst"
   
@@ -23,7 +26,8 @@ class FirstSecond < Stativus::State
   end
 end
 
-class FirstFirstFirst < Stativus::State
+class FirstFirstFirst
+  include Stativus::State
   parent_state "FirstFirst"
   
   def test_event
@@ -31,32 +35,37 @@ class FirstFirstFirst < Stativus::State
   end
 end
 
-class FirstFirstSecond < Stativus::State
+class FirstFirstSecond
+  include Stativus::State
   parent_state "FirstFirst"
   
   def test_event
   end
 end
 
-class FirstSecondSecond < Stativus::State
+class FirstSecondSecond
+  include Stativus::State
   parent_state 'FirstSecond'
   def test_event
   end
 end
 
-class Second < Stativus::State
+class Second
+  include Stativus::State
   initial_substate "SecondFirst"
   def test_event
   end
 end
 
-class SecondFirst < Stativus::State
+class SecondFirst
+  include Stativus::State
   parent_state "Second"
   def test_event
   end
 end
 
-class SecondSecond < Stativus::State
+class SecondSecond
+  include Stativus::State
   parent_state "Second"
   
   def test_event

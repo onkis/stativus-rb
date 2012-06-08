@@ -1,11 +1,13 @@
-class A < Stativus::State
+class A
+  include Stativus::State
   has_concurrent_substates true
   def enter
     puts "enered A. I have concurrent substates"
   end
 end
 
-class B < Stativus::State
+class B
+  include Stativus::State
   parent_state "A"
   def enter
     puts "entered B"
@@ -16,7 +18,8 @@ class B < Stativus::State
   end
 end
 
-class C < Stativus::State
+class C
+  include Stativus::State
   parent_state "A"
   def enter
     puts "entered C"

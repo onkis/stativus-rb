@@ -22,24 +22,28 @@ module AllEnterExit
 end
 
 
-class Application < Stativus::State
+class Application
+  include Stativus::State
   include AllEnterExit
   initial_substate "SubApplication"
 end
 
-class SubApplication < Stativus::State
+class SubApplication
+  include Stativus::State
   include AllEnterExit
   parent_state "Application"
   has_concurrent_substates true
 end
 
-class First < Stativus::State
+class First
+  include Stativus::State
   include AllEnterExit
   parent_state "SubApplication"
   initial_substate "FirstFirst"
 end
 
-class FirstFirst < Stativus::State
+class FirstFirst
+  include Stativus::State
   include AllEnterExit
   parent_state "First"
   
@@ -50,12 +54,14 @@ class FirstFirst < Stativus::State
   end
 end
 
-class FirstSecond < Stativus::State
+class FirstSecond
+  include Stativus::State
   include AllEnterExit
   parent_state "First"
 end
 
-class Second < Stativus::State
+class Second
+  include Stativus::State
   include AllEnterExit
   parent_state "SubApplication"
 end
